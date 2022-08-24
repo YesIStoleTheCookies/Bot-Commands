@@ -1,6 +1,7 @@
-// This file contains the first portion of the command, which makes a request to the MAL search page
-// which processes a search to find the best matching entry.
-// The second portion makes a request to the entry URL to pull anime data.
+/* 
+ * This command makes a request to the MAL search page and chooses the best matching entry.
+ * If and entry is found, calls the malentry command to extract and display entry data.
+ */
 
 
 require("dotenv").config();
@@ -16,19 +17,21 @@ module.exports = {
   description: 'To search the MyAnimeList database, use [prefix]mal [search term(s)]',
   usage: `mal`,
   async execute(message, args, command, client, Discord){
-
     message.channel.send("Loading search: "+ args.join(" "));
-
+   // create search URL
     let entryURL = "";
     await request("https://myanimelist.net/search/all?q="+args.join(" "), (error, response, html) => {
       if (!error && response.statusCode == 200) {
+        
+        // parse page HTML
         const $ = cheerio.load(html);
-        entryURL = $('a', '.title').attr("href");
+        entryURL = $('a', '.title').attr("href"); // Retrieve URL of top entry
         console.log(entryURL);
-        entryURL=entryURL.substring(0, 36);
+        entryURL=entryURL.substring(0, 36); // Cuts entry URL to only include the numerical code specific to the entry
         if (!entryURL) {
           return message.channel.send("No Results For: " + args.join(" "));
         }
+        // call malentry command to display data
         client.commands.get("malentry").execute(message, args, command, client, Discord, entryURL);
       }
     });
